@@ -52,6 +52,8 @@ RUN /bin/bash -c ". ~/.bash_profile"
 RUN cd $RSFMRI/bin
 WORKDIR $RSFMRI/bin
 
+#Documented below are the attempted changes using sed to modify the original python source
+#unfortunately indentation misalignments made the approach using sed difficult.
 #RUN sed -i "s\#data1 = data.get_data()\#dataold = data.get_data()\g" *
 #RUN sed -i "s#data1 = data.get_data()#data1 = data.get_data()\n\t\t\tif not (isinstance(data1, numpy.float32) or isinstance(data1, numpy.float64) or isinstance(data1,float)):\n\\t\t\t\tdata1.astype###(dtype=np.float64)#g" *
 #RUN sed -i "s#-1:self.tr_ms#-1:long(self.tr_ms)#g" *
@@ -59,7 +61,7 @@ WORKDIR $RSFMRI/bin
 #RUN sed -i "s#(len1-tmpMA+tmpMA2)-1:len1+tmpMA2#long(len1-tmpMA+tmpMA2-1):long(len1+tmpMA2)#g" *
 #RUN sed -i "s#(len2-tmpMA2)-1:len2+tmpMA-tmpMA2#long(len2-tmpMA2-1):long(len2+tmpMA-tmpMA2)#g" *
 
-#sed could not effectively change file as described above - created a new copy of resting_pipeline 
+#sed could not effectively change file as described above - sp just create a new copy of resting_pipeline 
 COPY ./src/resting_pipeline.py .
 
 RUN cd /opt/

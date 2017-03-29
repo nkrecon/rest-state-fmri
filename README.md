@@ -10,8 +10,8 @@ The original python source available at the link above `resting_pipeline.py` has
 ## Build Docker Image
 
 * You will need to have docker installed. Simply clone this repository to a convenient directory.
-* Navigate to the directory and check that all you have is the `Dockerfile` and the directory `src`
-* Change permissions on `src` and on `src/resting_pipeline.py` so that they have full read and write privileges. `sudo chmod -R 777 src` should accomplish this.
+* Navigate into the `rest-state-fmri`directory and check that all you have is the `Dockerfile` and the directory `src`
+* Confirm that `src` folder and the `src/resting_pipeline.py` file have full read and write privileges. if notthen `sudo chmod -R 777 src` should accomplish this.
 * Now build the image as follows `sudo docker build -t rsfmri_duke .`
 
 

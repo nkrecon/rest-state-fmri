@@ -1,0 +1,76 @@
+Bootstrap: docker
+From: ubuntu:xenial
+
+%setup
+cp ./src/resting_pipeline.py $SINGULARITY_ROOTFS
+
+%environment
+
+%files
+
+%runscript
+export FSLDIR=/opt/fsl
+. $FSLDIR/etc/fslconf/fsl.sh
+export BXHVER=bxh_xcede_tools-1.11.1-lsb30.x86_64
+export BXHBIN=/opt/$BXHVER
+export RSFMRI=/opt/rsfmri_python
+export PATH=$PATH:$BXHBIN/bin
+export PATH=$PATH:$BXHBIN/lib
+export PATH=$PATH:$RSFMRI/bin
+export PATH=$PATH:$FSLDIR/bin
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH
+export PATH=/usr/local/cuda/bin:$PATH
+exec "$@"
+
+%test
+
+%post
+mkdir /uaopt /extra /xdisk 
+export BXHVER=bxh_xcede_tools-1.11.1-lsb30.x86_64
+export BXHLOC=7384
+export BXHBIN=/opt/$BXHVER
+export RSFMRI=/opt/rsfmri_python
+apt-get update && apt-get install -y \
+	nano \
+	wget \
+	curl \
+	lsb-core \
+	python-pip
+pip install --upgrade pip
+pip install numpy
+pip install scipy
+pip install nibabel
+pip install networkx
+cd /tmp
+wget "http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run"
+mkdir -p nvidia_installers
+chmod +x cuda_7.5.18_linux.run
+./cuda_7.5.18_linux.run -extract=`pwd`/nvidia_installers
+rm cuda_7.5.18_linux.run
+cd nvidia_installers
+rm cuda-samples*
+rm NVIDIA-Linux*
+./cuda-linux64-rel-7.5.18-19867135.run -noprompt
+cd ..
+rm -R nvidia_installers
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH
+export PATH=/usr/local/cuda/bin:$PATH
+export FSLDIR=/opt/fsl
+export PATH=/opt/fsl/bin:$PATH
+curl -sSL https://fsl.fmrib.ox.ac.uk/fsldownloads/fsl-5.0.10-centos6_64.tar.gz \
+    | tar zx -C /opt \
+    && cp $FSLDIR/etc/fslconf/fsl.sh /etc/profile.d/ \
+    && FSLPYFILE=$FSLDIR/etc/fslconf/fslpython_install.sh \
+    && [ -f $FSLPYFILE ] && $FSLPYFILE -f $FSLDIR -q || true
+cd /tmp
+wget "http://www.nitrc.org/frs/download.php/$BXHLOC/$BXHVER.tgz"
+wget "https://wiki.biac.duke.edu/_media/biac:analysis:rsfmri_python.tgz"
+tar -xzf $BXHVER.tgz -C /opt
+mv biac:analysis:rsfmri_python.tgz rsfmri_python.tgz
+tar -xzf rsfmri_python.tgz  -C /opt
+rm rsfmri_python.tgz
+rm $BXHVER.tgz
+cp /resting_pipeline.py $RSFMRI/bin
+

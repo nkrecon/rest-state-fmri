@@ -2,9 +2,14 @@
 Please refer to [https://wiki.biac.duke.edu/biac:analysis:resting_pipeline](https://wiki.biac.duke.edu/biac:analysis:resting_pipeline) for details of use.
 
 The Docker image will be about 3GB when built. It comes with version 5.09 of FSL.
+<<<<<<< HEAD
 Alternatively if you do not want to builf the the docker image locally you can pull it from the Docker hub using the command `docker run -it --rm -v $PWD:/opt/data orbisys/rsfmri_duke` or `docker pull orbisys/rsfmri_duke`
+=======
+Alternatively if you do not want to build the the docker image locally you can pull it from the Docker hub using the command `docker run -it —-rm -v $PWD:/opt/data orbisys/rsfmri_duke` or `docker pull orbisys/rsfmri_duke`
+>>>>>>> b651bef8ae0e4dda6e5caed03da12a21c09bf422
 
 The Singularity image will be about 11GB when built. It comes with version 5.10 of FSL and has CUDA 7.5 libraries installed.
+Alternatively if you dou not want to build the singularity image you can pull it from the Singularity Hub using the command `singularity pull shub://chidiugonna/nkfmri-singularity-test`
 
 ## Introduction
 The original python source available at the link above `resting_pipeline.py` has been slightly amended and is included in this repository in the folder `src`. These changes are:

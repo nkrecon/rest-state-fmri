@@ -28,7 +28,6 @@ from optparse import OptionParser, OptionGroup
 import logging
 import math
 from scipy import ndimage as nd
-import shutil
 
 logging.basicConfig(format='%(asctime)s %(message)s ', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 
@@ -90,7 +89,6 @@ parser.add_option("--powerscrub", action="store_true", dest="powerscrub", help="
 parser.add_option("--scrubkeepminvols",  action="store", type="int", dest="scrubkeepminvols",help="If --motionthreshold, --dvarsthreshold, or --fdthreshold are specified, then --scrubminvols specifies the minimum number of volumes that should pass the threshold before doing any correlation.  If the minimum is not met, then the script exits with an error.  Default is to have no minimum.", metavar="NUMVOLS")
 parser.add_option("--fcdmthresh",  action="store", type="float", dest="fcdmthresh",help="R-value threshold to be used in functional connectivity density mapping ( step8 ). Default is set to 0.6. Algorithm from Tomasi et al, PNAS(2010), vol. 107, no. 21. Calculates the fcdm of functional data from last completed step, inside a dilated gray matter mask", metavar="THRESH", default=0.6)
 parser.add_option("--cleanup",  action="store_true", dest="cleanup",help="delete files from intermediate steps?")
-parser.add_option("--slidewin", action="store", type="string",dest="slidewin", help="Parameters for sliding window analysis. Provide in form W,S where W is window size in secs and S is shift in secs", metavar="string")
 
 
 
@@ -132,8 +130,6 @@ class RestPipe:
                 self.step7a()
             elif i == '7b':
                 self.step7b()
-            elif i == '7sw':
-                self.step7sw()
             elif i == '7':
                 self.step7()
             elif i == '8':
@@ -556,32 +552,7 @@ class RestPipe:
                 if not os.path.isfile(corrtsfile):
                     print "You are running step 7b by itself, but can't find default input file '%s'.  Please specify an alternate file with --corrts." % (corrtsfile,)
                     raise SystemExit()
-
-        #check that --slidewin if provided has been defined correctly 
-        if '7sw' in self.steps:
-        	if options.slidewin is not None:
-        		try:
-        			exitbool=False
-        			slideopts = [float(x) for x in options.slidewin.split(',')]
-        			self.slideWidth=int((slideopts[0]*1000)/self.tr_ms)
-        			self.slideShift=int((slideopts[1]*1000)/self.tr_ms)
-        			if self.slideWidth < 1 or self.slideWidth > self.tdim:
-        				print "Please ensure that when passing Window parameter in '--slidewin W,S' that Shift size S is greater than the TR of %0.3g seconds and less than the total acquistion time of %0.5g seconds" %(self.tr_ms/1000, self.tdim*self.tr_ms/1000)
-        				exitbool=True
-        			if self.slideShift < 1 or self.slideShift > self.tdim:
-        				print "Please ensure that when passing Window parameter in '--slidewin W,S' that Shift size S is greater than the TR of %0.23g seconds and less than the total acquistion time of %0.5g seconds" %(self.tr_ms/1000, self.tdim*self.tr_ms/1000)
-        				exitbool=True
-        			if exitbool:
-        				raise SystemExit()
-        		except ValueError as e:
-        			print "Please ensure --slidewin parameter is in the form W,S where W and S are numbers. W is window size in secs and S is shift in secs. e.g. --slidewin 30,3"
-        			raise SystemExit()
-        	else:
-        		print "You have not provided sliding window options using the --slidewin parameter. Defaulting to a window size of 30 seconds and shift of TR=%0.2g seconds" %(self.tr_ms/1000)
-        		self.slideWidth=int((30000)/self.tr_ms)
-        		self.slideShift=1
-
-
+        
 
     #get the labels from the text file
     def grab_labels(self):
@@ -1040,7 +1011,6 @@ class RestPipe:
 
     #do the parcellation and correlation
     def step7(self):
-    	self.step7sw()
         self.step7a()
         self.step7b()
         
@@ -1151,94 +1121,6 @@ class RestPipe:
             logging.info('could not find mean timeseries matrix file "%s"', corrtxt)
             raise SystemExit()
 
-    #Perform sliding window analysis
-    def step7sw(self):
-    	rmat = os.path.join(self.outpath,'r_matrix.nii.gz')
-        rtxt = os.path.join(self.outpath,'r_matrix.csv')
-        zmat = os.path.join(self.outpath,'zr_matrix.nii.gz')
-        ztxt = os.path.join(self.outpath,'zr_matrix.csv')
-        corrtxt = os.path.join(self.outpath,'corrlabel_ts.txt')
-        maskname = os.path.join(self.outpath,'mask_matrix.nii.gz')
-        graphml = os.path.join(self.outpath,'subject.graphml')
-        #if these files already exist then 7a must have already run. We will back these up.
-        if (os.path.exists(rmat)):
-        	shutil.move(rmat, rmat+'.bk')
-        if (os.path.exists(rtxt)):
-        	shutil.move(rtxt, rtxt+'.bk')
-        if (os.path.exists(zmat)):
-        	shutil.move(zmat, zmat+'.bk')
-        if (os.path.exists(ztxt)):
-        	shutil.move(ztxt, ztxt+'.bk')
-        if (os.path.exists(corrtxt)):
-        	shutil.move(corrtxt, corrtxt+'.bk')
-        if (os.path.exists(maskname)):
-        	shutil.move(maskname, maskname+'.bk')
-        if (os.path.exists(graphml)):
-        	shutil.move(graphml, graphml+'.bk')
-    	slideWinPath=os.path.join(self.outpath, "slideWinAnalysis_"+str(int(self.slideWidth*self.tr_ms/1000))+"_" + str(int(self.slideShift*(self.tr_ms/1000))))
-    	if not ( os.path.exists(slideWinPath) ):
-                os.mkdir(slideWinPath)
-    	#create the initial correlation matrix using the provided atlas
-    	self.step7a()
-    	corrtxt = os.path.join(self.outpath,'corrlabel_ts.txt')
-    	if os.path.isfile(corrtxt):        
-            timeseries = np.loadtxt(corrtxt,unpack=True)
-            #loop through all windows and create correlation matrix
-            tsloc=0
-            winNum=1
-            while (tsloc+self.slideWidth) <= self.tdim:
-            	#copy tmeseries to corrtxt for each window
-            	logging.info("performing sliding window analysis for window %d " %(winNum))
-            	np.savetxt(corrtxt,timeseries[tsloc:tsloc+self.slideWidth-1,:],fmt='%.10g')
-            	self.step7b()
-            	rmatw = os.path.join(slideWinPath,'r_matrix' + "%04d" % winNum + '.nii.gz')  
-            	rtxtw = os.path.join(slideWinPath,'r_matrix' + "%04d" % winNum + '.csv')
-            	zmatw = os.path.join(slideWinPath,'zr_matrix' + "%04d" % winNum + '.nii.gz')
-            	ztxtw = os.path.join(slideWinPath,'zr_matrix' + "%04d" % winNum + '.csv')
-            	corrtxtw = os.path.join(slideWinPath,'corrlabel_ts' + "%04d" % winNum + '.txt')
-            	masknamew = os.path.join(slideWinPath,'mask_matrix'+ "%04d" % winNum + '.nii.gz')
-            	graphmlw = os.path.join(slideWinPath,'subject' + "%04d" % winNum + '.graphml')
-            	shutil.move(rmat, rmatw)
-            	shutil.move(rtxt, rtxtw)
-            	shutil.move(zmat, zmatw)
-            	shutil.move(ztxt, ztxtw)
-            	shutil.move(corrtxt, corrtxtw)
-            	shutil.move(maskname, masknamew)
-            	shutil.move(graphml, graphmlw)
-            	winNum=winNum+1
-            	tsloc=tsloc + self.slideShift
-            #now that we have individual files we can use imglob and fslmerge to compress into multi-volume
-        else:            
-            logging.info('could not find mean timeseries matrix file "%s"', corrtxt)
-            raise SystemExit()
-
-        thisprocstr = str("fslmerge -t " + os.path.join(slideWinPath,'r_matrix_slide') + " `ls "+os.path.join(slideWinPath,'r_matrix*.nii.gz')+"`")
-        logging.info('running: ' + thisprocstr)
-        subprocess.Popen(thisprocstr,shell=True).wait()
-
-        thisprocstr = str("fslmerge -t " + os.path.join(slideWinPath,'zr_matrix_slide') + " `ls "+os.path.join(slideWinPath,'zr_matrix*.nii.gz')+"`")
-        logging.info('running: ' + thisprocstr)
-        subprocess.Popen(thisprocstr,shell=True).wait()
-
-        thisprocstr = str("fslmerge -t " + os.path.join(slideWinPath,'mask_matrix_slide') + " `ls "+os.path.join(slideWinPath,'mask_matrix*.nii.gz')+"`")
-        logging.info('running: ' + thisprocstr)
-        subprocess.Popen(thisprocstr,shell=True).wait()
-
-        #if these backup files already exist then 7a must have already run. We will move these back.
-        if (os.path.exists(rmat+'.bk')):
-        	shutil.move(rmat+'.bk', rmat)
-        if (os.path.exists(rtxt+'.bk')):
-        	shutil.move(rtxt+'.bk', rtxt)
-        if (os.path.exists(zmat+'.bk')):
-        	shutil.move(zmat+'.bk', zmat)
-        if (os.path.exists(ztxt+'.bk')):
-        	shutil.move(ztxt+'.bk', ztxt)
-        if (os.path.exists(corrtxt+'.bk')):
-        	shutil.move(corrtxt+'.bk', corrtxt)
-        if (os.path.exists(maskname+'.bk')):
-        	shutil.move(maskname+'.bk', maskname)
-        if (os.path.exists(graphml+'.bk')):
-        	shutil.move(graphml+'.bk', graphml)
 
     #fcdm
     def step8(self):

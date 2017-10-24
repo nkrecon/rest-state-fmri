@@ -7,6 +7,7 @@ cp ./src/resting_pipeline_orig.py $SINGULARITY_ROOTFS
 cp ./src/fsl_sub $SINGULARITY_ROOTFS
 cp ./src/statusfeat.py $SINGULARITY_ROOTFS
 cp ./src/runfeat-1.py $SINGULARITY_ROOTFS
+cp ./src/make_fsl_stc.py $SINGULARITY_ROOTFS
 
 %environment
 
@@ -134,4 +135,5 @@ mv /resting_pipeline_orig.py $RSFMRI/bin
 mv /fsl_sub $FSLDIR/bin
 mv /statusfeat.py $RSFMRI/bin
 mv /runfeat-1.py $RSFMRI/bin
+mv /make_fsl_stc.py $RSFMRI/bin
 

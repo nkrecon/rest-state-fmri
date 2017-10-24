@@ -64,6 +64,7 @@ parser.add_option("-p", "--prefix",  action="store", type="string", dest="prefix
 parser.add_option("-s", "--steps",  action="store", type="string", dest="steps",help="comma seperated string of steps. 'all' will run everything, default is all", metavar="0,1,2,3", default='all')
 parser.add_option("-o","--outpath",  action="store",type="string", dest="outpath",help="location to store output files", metavar="PATH", default='PWD')
 parser.add_option("--sliceorder",  action="store",type="string", dest="sliceorder",help="sliceorder if slicetime correction ( odd=interleaved (1,3,5,2,4,6), up=ascending, down=descending, even=interleaved (2,4,6,1,3,5) ).  Default is to read this from input image, if available.", metavar="string")
+parser.add_option("--slicetiming", action="store", type="string",dest="slicetiming", help="if =order then slice timing file if provided is assumed to contain slice orders. Otherwise slice time is assumed.", metavar="string",default='order')
 parser.add_option("--tr",  action="store", type="float", dest="tr_ms",help="TR of functional data in MSEC", metavar="MSEC")
 parser.add_option("--ref",  action="store", type="string", dest="flirtref",help="pointer to FLIRT reference image if not using standard brain", metavar="FILE")
 parser.add_option("--flirtmat",  action="store", type="string", dest="flirtmat",help="a pre-defined flirt matrix to apply to your functional data. (ie: func2standard.mat)", metavar="FILE")
@@ -534,8 +535,10 @@ class RestPipe:
                     else:
                         logging.info("z dimension could not be found.")
                         raise SystemExit()
+                elif os.path.exists(os.path.abspath(options.sliceorder)):
+                    self.slicefile = os.path.abspath(options.sliceorder)
                 else:
-                    logging.info("sliceorder is incorrectly defined. use odd/even/up/down.")
+                    logging.info("sliceorder is incorrectly defined. use odd/even/up/down or supply a properly defined custom sliceorder file")
                     raise SystemExit()
             else:
                 logging.info("slice order not found. please use --sliceorder option")
@@ -558,7 +561,7 @@ class RestPipe:
                     raise SystemExit()
 
         #check that --slidewin if provided has been defined correctly 
-        if '7sw' in self.steps:
+        if '7sw' in self.steps or '7' in self.steps:
         	if options.slidewin is not None:
         		try:
         			exitbool=False
@@ -650,8 +653,11 @@ class RestPipe:
         logging.info('slice time correcting data')
         newprefix = self.prefix + '_st'
         newfile = os.path.join(self.outpath,newprefix)
-        
-        thisprocstr = str("slicetimer -i " + self.thisnii + " -o " + newfile + " -r " +  str(self.tr_ms/1000) + " --ocustom=" + self.slicefile)
+
+        if options.slicetiming == 'order':
+            thisprocstr = str("slicetimer -i " + self.thisnii + " -o " + newfile + " -r " +  str(self.tr_ms/1000) + " --ocustom=" + self.slicefile)
+        else:
+            thisprocstr = str("slicetimer -i " + self.thisnii + " -o " + newfile + " -r " +  str(self.tr_ms/1000) + " --tcustom=" + self.slicefile)
         logging.info('running: ' + thisprocstr)
         subprocess.Popen(thisprocstr,shell=True).wait()
         
@@ -1182,7 +1188,7 @@ class RestPipe:
     	self.step7a()
     	corrtxt = os.path.join(self.outpath,'corrlabel_ts.txt')
     	if os.path.isfile(corrtxt):        
-            timeseries = np.loadtxt(corrtxt,unpack=True)
+            timeseries = np.transpose(np.loadtxt(corrtxt,unpack=True))
             #loop through all windows and create correlation matrix
             tsloc=0
             winNum=1

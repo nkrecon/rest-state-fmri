@@ -64,6 +64,12 @@ WORKDIR $RSFMRI/bin
 #sed could not effectively change file as described above - sp just create a new copy of resting_pipeline 
 COPY ./src/resting_pipeline.py .
 COPY ./src/startup.sh .
+COPY ./src/resting_pipeline_orig.py .
+COPY ./src/runfeat-1.py .
+COPY ./src/statusfeat.py .
+COPY ./src/make_fsl_stc.py .
+COPY ./src/fsl_sub $FSLDIR/bin
+COPY ./src/readme.txt .
 
 RUN cd /opt/
 RUN mkdir data
@@ -71,4 +77,4 @@ RUN cd data
 WORKDIR /opt/data
 
 ENTRYPOINT ["/opt/rsfmri_python/bin/startup.sh"]
-CMD ["--help"]
+CMD ["more /opt/rsfmri_python/bin/readme.txt"]

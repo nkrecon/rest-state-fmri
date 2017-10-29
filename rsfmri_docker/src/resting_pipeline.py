@@ -92,6 +92,8 @@ parser.add_option("--scrubkeepminvols",  action="store", type="int", dest="scrub
 parser.add_option("--fcdmthresh",  action="store", type="float", dest="fcdmthresh",help="R-value threshold to be used in functional connectivity density mapping ( step8 ). Default is set to 0.6. Algorithm from Tomasi et al, PNAS(2010), vol. 107, no. 21. Calculates the fcdm of functional data from last completed step, inside a dilated gray matter mask", metavar="THRESH", default=0.6)
 parser.add_option("--cleanup",  action="store_true", dest="cleanup",help="delete files from intermediate steps?")
 parser.add_option("--slidewin", action="store", type="string",dest="slidewin", help="Parameters for sliding window analysis. Provide in form W,S where W is window size in secs and S is shift in secs", metavar="string")
+parser.add_option("--ignorebxh", action="store", type="string",dest="ignorebxh", help="By default this is set to Y. If you want to read BXH then set to N", metavar="string", default='Y')
+
 
 
 
@@ -168,6 +170,8 @@ class RestPipe:
             else:
                 self.origbxh = str(options.funcfile)
 
+        if options.ignorebxh == 'Y':
+        	self.origbxh = None
         #t1
         self.t1bxh = None
         self.t1nii = None

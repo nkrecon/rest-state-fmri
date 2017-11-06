@@ -1097,6 +1097,10 @@ class RestPipe:
             #replace the infs with 0            
             for idx in range(len(infs[0])):
                 zrmaps[infs[0][idx]][infs[1][idx]] = 0
+
+            #What to do about diagonals due to precision issue which is causing the diagonal to 
+            #not be uniformly 0 - fill just force to 0
+            np.fill_diagonal(zrmaps,0)
             
             nibabel.save(nibabel.Nifti1Image(myres,None) ,rmat)
             nibabel.save(nibabel.Nifti1Image(zrmaps,None) ,zmat)

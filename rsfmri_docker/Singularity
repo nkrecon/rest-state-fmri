@@ -1,6 +1,9 @@
 Bootstrap: docker
 From: ubuntu:xenial
 
+%help
+Please refer to https://github.com/chidiugonna/nklab-fmriproc for documentation about this singularity container.
+
 %setup
 cp ./src/resting_pipeline.py $SINGULARITY_ROOTFS
 cp ./src/resting_pipeline_orig.py $SINGULARITY_ROOTFS

@@ -38,15 +38,17 @@ RUN tar -xzf rsfmri_python.tgz  -C /opt
 
 ENV BXHBIN /opt/$BXHVER
 ENV RSFMRI /opt/rsfmri_python
-
+ENV FSLDIR /usr/share/fsl/5.0
 #set environment variables
 ENV PATH=$PATH:$BXHBIN/bin
 ENV PATH=$PATH:$BXHBIN/lib
 ENV PATH=$PATH:$RSFMRI/bin
+ENV PATH=$PATH:$FSLDIR/bin
 
 #Source FSL configuration (no bash profile exists in neurodebian so just copy over)
 RUN cp /etc/fsl/5.0/fsl.sh ~/.bash_profile
 RUN /bin/bash -c ". ~/.bash_profile"
+RUN echo ". ~/.bash_profile" >> ~/.bashrc
 #choose the current directory to be RSFMRI
 
 RUN cd $RSFMRI/bin

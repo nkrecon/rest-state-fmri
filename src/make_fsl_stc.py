@@ -11,15 +11,22 @@ parser.add_argument("--slicetime",help="name and location to place slice timing 
 parser.add_argument("--slicenum",help="name and location to place slice timing file with slices in order of acquisition.")
 args=parser.parse_args()
 
-if args.slicetime:
-	slicetimefile=os.path.abspath(args.slicetime)
-else:
-	slicetimefile=os.path.join(os.getcwd(),'slicetimes.txt')
+doSliceTime = False
+doSliceNum = False
 
 if args.slicetime:
+	slicetimefile=os.path.abspath(args.slicetime)
+	doSliceTime = True
+elif not args.slicenum:
+	slicetimefile=os.path.join(os.getcwd(),'slicetimes.txt')
+	doSliceTime = True
+
+if args.slicenum:
 	slicenumfile=os.path.abspath(args.slicenum)
-else:
+	doSliceNum = True
+elif not args.slicetime:
 	slicenumfile=os.path.join(os.getcwd(),'sliceorder.txt')
+	doSliceNum = True
 
 json_file=open(args.jsonfile)
 info = json.load(json_file)
@@ -32,8 +39,10 @@ sortedSlices = sorted(slicelist, key=lambda tup: tup[1])
 slicetimes=[str(sliceinfo[1]) for sliceinfo in slicelist]
 slicenums=[str(sliceinfo[0]) for sliceinfo in sortedSlices]
 
-slicetimef=open(slicetimefile,'w')
-slicetimef.write("\n".join(slicetimes))
+if doSliceTime:
+	slicetimef=open(slicetimefile,'w')
+	slicetimef.write("\n".join(slicetimes))
 
-slicenumf=open(slicenumfile,'w')
-slicenumf.write("\n".join(slicenums))
+if doSliceNum:
+	slicenumf=open(slicenumfile,'w')
+	slicenumf.write("\n".join(slicenums))

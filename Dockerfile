@@ -13,14 +13,13 @@ RUN apt-get update && apt-get install -y \
 	python-pip 
 
 #install pip, numpy, nibabel, scipy, networkx
-RUN pip install --upgrade pip
 RUN pip install numpy
 RUN pip install scipy
 RUN pip install nibabel
-RUN pip install networkx
+RUN pip install networkx==1.11
+RUN pip install pyBIDS
 
 #navigate to the tmp directory to download files
-RUN cd /tmp
 WORKDIR /tmp
 #for 32 bit use = bxh_xcede_tools-1.11.1-lsb30.i386
 ENV BXHVER bxh_xcede_tools-1.11.1-lsb30.x86_64
@@ -45,38 +44,36 @@ ENV PATH=$PATH:$BXHBIN/lib
 ENV PATH=$PATH:$RSFMRI/bin
 ENV PATH=$PATH:$FSLDIR/bin
 
-#Source FSL configuration (no bash profile exists in neurodebian so just copy over)
-RUN cp /etc/fsl/5.0/fsl.sh ~/.bash_profile
-RUN /bin/bash -c ". ~/.bash_profile"
-RUN echo ". ~/.bash_profile" >> ~/.bashrc
-#choose the current directory to be RSFMRI
-
-RUN cd $RSFMRI/bin
-WORKDIR $RSFMRI/bin
-
-#Documented below are the attempted changes using sed to modify the original python source
-#unfortunately indentation misalignments made the approach using sed difficult.
-#RUN sed -i "s\#data1 = data.get_data()\#dataold = data.get_data()\g" *
-#RUN sed -i "s#data1 = data.get_data()#data1 = data.get_data()\n\t\t\tif not (isinstance(data1, numpy.float32) or isinstance(data1, numpy.float64) or isinstance(data1,float)):\n\\t\t\t\tdata1.astype###(dtype=np.float64)#g" *
-#RUN sed -i "s#-1:self.tr_ms#-1:long(self.tr_ms)#g" *
-#RUN sed -i "s#len1:len2#long(len1):long(len2)#g" *
-#RUN sed -i "s#(len1-tmpMA+tmpMA2)-1:len1+tmpMA2#long(len1-tmpMA+tmpMA2-1):long(len1+tmpMA2)#g" *
-#RUN sed -i "s#(len2-tmpMA2)-1:len2+tmpMA-tmpMA2#long(len2-tmpMA2-1):long(len2+tmpMA-tmpMA2)#g" *
-
-#sed could not effectively change file as described above - sp just create a new copy of resting_pipeline 
+WORKDIR /opt/bin
 COPY ./src/resting_pipeline.py .
 COPY ./src/startup.sh .
-COPY ./src/resting_pipeline_orig.py .
 COPY ./src/runfeat-1.py .
 COPY ./src/statusfeat.py .
 COPY ./src/make_fsl_stc.py .
 COPY ./src/fsl_sub $FSLDIR/bin
-COPY ./src/readme.txt .
+COPY ./src/readme .
+COPY ./src/version .
 
-RUN cd /opt/
-RUN mkdir data
-RUN cd data
+RUN mkdir -p /opt/data
 WORKDIR /opt/data
 
-ENTRYPOINT ["/opt/rsfmri_python/bin/startup.sh"]
-CMD ["more /opt/rsfmri_python/bin/readme.txt"]
+# Replace 1000 with your user / group id
+RUN export uid=1000 gid=1000 && \
+    mkdir -p /home/developer && \
+    mkdir -p /etc/sudoers.d && \
+    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+    echo "developer:x:${uid}:" >> /etc/group && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+    chmod 0440 /etc/sudoers.d/developer && \
+    chown ${uid}:${gid} -R /home/developer
+
+ENV USER developer
+ENV HOME /home/developer
+#Source FSL configuration (no bash profile exists in neurodebian so just copy over)
+RUN cp /etc/fsl/5.0/fsl.sh ~/.bash_profile
+RUN /bin/bash -c ". ~/.bash_profile"
+RUN echo ". ~/.bash_profile" >> ~/.bashrc
+
+
+ENTRYPOINT ["/opt/bin/startup.sh"]
+CMD ["more /opt/bin/readme"]

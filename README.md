@@ -10,7 +10,7 @@ help information can be obtained as `docker run --rm orbisys/rest-state-fmri -h`
 The Docker image will be about 3GB when built. It comes with version 5.09 of FSL.
 Alternatively if you do not want to build the docker image locally you can pull it from the Docker hub using the command `docker run -it --rm -v $PWD:/opt/data orbisys/rest-state-fmri` or `docker pull orbisys/rest-state-fmri`
 
-The Singularity image will be about 4GB when built. It comes with version 5.10 of FSL. Again if you prefer not to build this locally then it can be obtained using `Singularity pull shub://chidiugonna/rest-state-fmri`
+The Singularity image will be about 4GB when built. It comes with version 5.10 of FSL. Again if you prefer not to build this locally then a sister version of this singularity image can be downloaded as `Singularity pull shub://chidiugonna/nklab-neuro-reststate`
 
 ## Introduction
 The original python source  `resting_pipeline.py` available at at [https://wiki.biac.duke.edu/biac:analysis:resting_pipeline] has been slightly amended. These changes are:

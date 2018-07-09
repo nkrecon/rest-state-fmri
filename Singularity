@@ -105,8 +105,6 @@ cd ${FSLDIR}
 sed -i "s#dropprivileges=1#dropprivileges=0#g" ${FSLDIR}/etc/fslconf/fslpython_install.sh
 ${FSLDIR}/etc/fslconf/fslpython_install.sh
 cd  ${FSLDIR}/bin
-wget https://fsl.fmrib.ox.ac.uk/fsldownloads/patches/eddy-patch-fsl-5.0.11/centos6/eddy_cuda7.5
-chmod +x eddy_cuda7.5
 wget https://fsl.fmrib.ox.ac.uk/fsldownloads/patches/eddy-patch-fsl-5.0.11/centos6/eddy_openmp
 chmod +x eddy_openmp
 wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fsleyes/FSLeyes-latest-ubuntu1604.zip
@@ -120,6 +118,8 @@ mv biac:analysis:rsfmri_python.tgz rsfmri_python.tgz
 tar -xzf rsfmri_python.tgz  -C /opt
 rm rsfmri_python.tgz
 rm $BXHVER.tgz
+
+chmod -R 777 /opt 
 
 mv /resting_pipeline.py /opt/bin
 mv /fsl_sub $FSLDIR/bin

@@ -44,6 +44,8 @@ ENV PATH=$PATH:$BXHBIN/lib
 ENV PATH=$PATH:$RSFMRI/bin
 ENV PATH=$PATH:$FSLDIR/bin
 
+RUN mkdir -p /opt/bin
+RUN chmod -R 777 /opt
 WORKDIR /opt/bin
 COPY ./src/resting_pipeline.py .
 COPY ./src/startup.sh .

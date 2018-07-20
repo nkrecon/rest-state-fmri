@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: ubuntu:xenial
+From: neurodebian:xenial
 
 %help
 exec /opt/bin/startup.sh "-h"
@@ -15,7 +15,7 @@ cp ./src/readme $SINGULARITY_ROOTFS
 cp ./src/version $SINGULARITY_ROOTFS
 
 %environment
-export FSLDIR=/opt/fsl
+export FSLDIR=/usr/share/fsl/5.0
 export BXHVER=bxh_xcede_tools-1.11.1-lsb30.x86_64
 export BXHBIN=/opt/$BXHVER
 export RSFMRI=/opt/rsfmri_python
@@ -23,9 +23,7 @@ export PATH=$PATH:$BXHBIN/bin
 export PATH=$PATH:$BXHBIN/lib
 export PATH=$PATH:$RSFMRI/bin
 export PATH=$PATH:$FSLDIR/bin
-export PATH=$PATH:$FSLDIR/bin/FSLeyes
 export PATH=$PATH:/opt/bin
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH
 
 %files
@@ -37,79 +35,28 @@ exec /opt/bin/startup.sh "$@"
 %test
 
 %post
-mkdir /uaopt /extra /xdisk /opt/data /opt/bin /rsgrps
+mkdir -p /uaopt /extra /xdisk /rsgrps /opt/data /opt/bin /opt/work /opt/input /opt/output
 export BXHVER=bxh_xcede_tools-1.11.1-lsb30.x86_64
 export BXHLOC=7384
 export BXHBIN=/opt/$BXHVER
 export RSFMRI=/opt/rsfmri_python
+export FSLDIR=/usr/share/fsl/5.0
+# install FSL
+# Making fsl-complete available as it is no longer contribution-free
+# Reference: http://lists.alioth.debian.org/pipermail/neurodebian-users/2016-April/001052.html 
+echo 'fsl-complete is not contribution-free. making it available for install'
+sed -i -e 's,main$,main contrib non-free,g' /etc/apt/sources.list.d/neurodebian.sources.list
 apt-get update && apt-get install -y \
-	nano \
+	fsl-complete \
 	wget \
-	curl \
 	lsb-core \
-	python-pip \
-        libx11-6 \
-        libgl1 \
-        libsm6 \
-        libxext6 \
-        libxt6 \
-        mesa-common-dev \
-        freeglut3-dev \
-        zlib1g-dev \
-        libpng-dev \
-        expat \
-        unzip
+	python-pip 
 pip install numpy
 pip install scipy
 pip install nibabel
 pip install networkx==1.11
 cd /tmp
 
-export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH
-cd /tmp
-wget https://cmake.org/files/v3.10/cmake-3.10.0-rc1.tar.gz
-tar xz -f cmake-3.10.0-rc1.tar.gz
-rm cmake-3.10.0-rc1.tar.gz
-cd cmake-3.10.0-rc1
-./configure
-make
-make install
-./bootstrap --prefix=/usr
-make
-make install
-wget http://www.vtk.org/files/release/7.1/VTK-7.1.1.tar.gz
-tar xz -f VTK-7.1.1.tar.gz
-rm VTK-7.1.1.tar.gz
-cd VTK-7.1.1
-cmake .
-make
-make install
-export FSLDIR=/opt/fsl
-export PATH=${FSLDIR}/bin:${PATH}
-cd /opt
-curl -sSL  https://www.dropbox.com/s/fappgvj52xpfyzj/fsl-5.0.10-sources.tar.gz?dl=1 | tar zx
-chmod -R 777 fsl
-sed -i 's/#FSLCONFDIR/FSLCONFDIR/g' ${FSLDIR}/etc/fslconf/fsl.sh
-sed -i 's/#FSLMACHTYPE/FSLMACHTYPE/g' ${FSLDIR}/etc/fslconf/fsl.sh
-sed -i 's/#export FSLCONFDIR/export FSLCONFDIR /g' ${FSLDIR}/etc/fslconf/fsl.sh
-. ${FSLDIR}/etc/fslconf/fsl.sh
-cp -r ${FSLDIR}/config/linux_64-gcc4.8 ${FSLDIR}/config/${FSLMACHTYPE}
-sed -i "s#scl enable devtoolset-2 -- c++#c++#g" $FSLDIR/config/$FSLMACHTYPE/systemvars.mk
-sed -i "s#VTKDIR_INC = /home/fs0/cowboy/var/caper_linux_64-gcc4.4/VTK7/include/vtk-7.0#VTKDIR_INC = /usr/local/include/vtk-7.1/#g" $FSLDIR/config/$FSLMACHTYPE/externallibs.mk
-sed -i "s#VTKDIR_LIB = /home/fs0/cowboy/var/caper_linux_64-gcc4.4/VTK7/lib#VTKDIR_LIB = /usr/local/lib/#g" $FSLDIR/config/$FSLMACHTYPE/externallibs.mk
-sed -i "s#VTKSUFFIX = -7.0#VTKSUFFIX = -7.1#g" $FSLDIR/config/$FSLMACHTYPE/externallibs.mk
-sed -i "s#{LIBRT}#{LIBRT} -ldl#g" $FSLDIR/src/mist-clean/Makefile
-sed -i "s#lpng -lz#lpng -lz -lm#g" $FSLDIR/src/miscvis/Makefile
-cd ${FSLDIR}
-./build
-sed -i "s#dropprivileges=1#dropprivileges=0#g" ${FSLDIR}/etc/fslconf/fslpython_install.sh
-${FSLDIR}/etc/fslconf/fslpython_install.sh
-cd  ${FSLDIR}/bin
-wget https://fsl.fmrib.ox.ac.uk/fsldownloads/patches/eddy-patch-fsl-5.0.11/centos6/eddy_openmp
-chmod +x eddy_openmp
-wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fsleyes/FSLeyes-latest-ubuntu1604.zip
-unzip FSLeyes-latest-ubuntu1604.zip
-rm FSLeyes-latest-ubuntu1604.zip
 cd /tmp
 wget "http://www.nitrc.org/frs/download.php/$BXHLOC/$BXHVER.tgz"
 wget "https://wiki.biac.duke.edu/_media/biac:analysis:rsfmri_python.tgz"
@@ -129,6 +76,8 @@ mv /make_fsl_stc.py /opt/bin
 mv /startup.sh /opt/bin
 mv /readme /opt/bin
 mv /version /opt/bin
+
+cd /opt/data
 
 echo ". $FSLDIR/etc/fslconf/fsl.sh" >> $SINGULARITY_ENVIRONMENT
 

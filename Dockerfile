@@ -47,7 +47,7 @@ ENV PATH=$PATH:$FSLDIR/bin
 RUN mkdir -p /opt/bin
 RUN chmod -R 777 /opt
 WORKDIR /opt/bin
-COPY ./src/resting_pipeline.py .
+COPY ./src/resting_pipeline.py /opt/rsfmri_python/bin
 COPY ./src/startup.sh .
 COPY ./src/runfeat-1.py .
 COPY ./src/statusfeat.py .

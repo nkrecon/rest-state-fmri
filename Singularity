@@ -68,7 +68,7 @@ rm $BXHVER.tgz
 
 chmod -R 777 /opt 
 
-mv /resting_pipeline.py /opt/bin
+mv /resting_pipeline.py /opt/rsfmri_python/bin
 mv /fsl_sub $FSLDIR/bin
 mv /statusfeat.py /opt/bin
 mv /runfeat-1.py /opt/bin

@@ -93,6 +93,8 @@ parser.add_option("--fcdmthresh",  action="store", type="float", dest="fcdmthres
 parser.add_option("--cleanup",  action="store_true", dest="cleanup",help="delete files from intermediate steps?")
 parser.add_option("--slidewin", action="store", type="string",dest="slidewin", help="Parameters for sliding window analysis. Provide in form W,S where W is window size in secs and S is shift in secs", metavar="string")
 parser.add_option("--ignorebxh", action="store", type="string",dest="ignorebxh", help="By default this is set to Y. If you want to read BXH then set to N", metavar="string", default='Y')
+parser.add_option("--betparams", action="store", type="string", dest="betparams", help="Additional params for functional skull stripping", metavar="", default="")
+parser.add_option("--anatbetparams", action="store", type="string", dest="anatbetparams", help="Additional params for structural skull stripping", metavar="", default="")
 
 
 
@@ -291,6 +293,8 @@ class RestPipe:
         #f value to use in bet for skull stripping
         self.betfval = options.betfval
         self.anatbetfval = options.anatbetfval
+        self.betparams = options.betparams
+        self.anatbetparams = options.anatbetparams
 
         self.sliceorder = options.sliceorder
 
@@ -769,7 +773,7 @@ class RestPipe:
         subprocess.Popen(thisprocstr,shell=True).wait()
 
         #now skull strip the mean
-        thisprocstr = "bet " + os.path.join(self.outpath,'mean_func') + " " + os.path.join(self.outpath,'mean_func_brain') + " -f " + str(self.betfval) + " -m"
+        thisprocstr = "bet " + os.path.join(self.outpath,'mean_func') + " " + os.path.join(self.outpath,'mean_func_brain') + " " + self.betparams + " -f " + str(self.betfval) + " -m"
         logging.info('running: ' + thisprocstr)
         subprocess.Popen(thisprocstr,shell=True).wait()
 
@@ -795,7 +799,7 @@ class RestPipe:
             logging.info('skull stripping anat')
             newprefix = self.t1nii.split('/')[-1].split('.')[0] + "_brain"
             newfile = os.path.join(self.outpath, newprefix)
-            thisprocstr = str("bet " + self.t1nii + " " + newfile + " -f " + str(self.anatbetfval))
+            thisprocstr = str("bet " + self.t1nii + " " + newfile + " " + self.anatbetparams + " -f " + str(self.anatbetfval))
             logging.info('running: ' + thisprocstr)
             subprocess.Popen(thisprocstr,shell=True).wait()
         
@@ -1040,7 +1044,8 @@ class RestPipe:
             logging.info('lowpass filtering successful: ' + self.thisnii )
 
             logging.info('creating mean image.')
-            thisprocstr = str("fslmaths " + self.thisnii + " -Tmean filt_mean")
+            filt_mean = os.path.join(self.outpath,'filt_mean')
+            thisprocstr = str("fslmaths " + self.thisnii + " -Tmean " + filt_mean)
             logging.info('running: ' + thisprocstr)
             subprocess.Popen(thisprocstr,shell=True).wait()
         else:

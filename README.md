@@ -1,6 +1,9 @@
 #  Docker and Singularity images for Resting State FMRI pipeline (Nan-kuei Chen/Duke University) 
 Please refer to [https://wiki.biac.duke.edu/biac:analysis:resting_pipeline](https://wiki.biac.duke.edu/biac:analysis:resting_pipeline) for details of use.
 
+# Update
+8/3/2018	Unfortunately recent changes to the Neurodebian docker image are causing errors in the singularity build for this container. To build a singularity image with the resting state pipeline based instead on ubuntu then go to the nklab-neuro-fsl repository. 
+
 # Summary
 This repository contains the build scripts for Docker and Singularity images of the Duke resting pipeline that perform processing of resting state data using FSL (Jenkinson et al. 2012) tools and custom scripts.
 

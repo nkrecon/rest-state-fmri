@@ -81,3 +81,4 @@ cd /opt/data
 
 echo ". $FSLDIR/etc/fslconf/fsl.sh" >> $SINGULARITY_ENVIRONMENT
 
+

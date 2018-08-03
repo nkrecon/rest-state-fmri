@@ -4,6 +4,7 @@ From: neurodebian:xenial
 %help
 exec /opt/bin/startup.sh "-h"
 
+
 %setup
 cp ./src/resting_pipeline.py $SINGULARITY_ROOTFS
 cp ./src/fsl_sub $SINGULARITY_ROOTFS
